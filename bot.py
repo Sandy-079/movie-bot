@@ -1,5 +1,6 @@
 import json
 import config
+import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
@@ -7,22 +8,8 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 with open("movies.json") as f:
     movies = json.load(f)
 
-# Check join
-async def is_user_joined(bot, user_id):
-    try:
-        member = await bot.get_chat_member(config.CHANNEL_USERNAME, user_id)
-        return member.status in ["member", "administrator", "creator"]
-    except:
-        return False
-
 # Start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-
-    if not await is_user_joined(context.bot, user_id):
-        await update.message.reply_text(f"Join channel: {config.CHANNEL_USERNAME}")
-        return
-
     if context.args:
         movie_id = context.args[0]
 
@@ -32,13 +19,22 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 caption=movies[movie_id]["title"]
             )
         else:
-            await update.message.reply_text("Not found ❌")
+            await update.message.reply_text("❌ Movie not found")
     else:
-        await update.message.reply_text("Welcome 👋")
+        await update.message.reply_text("👋 Welcome")
 
-# ✅ FINAL FIX (no asyncio.run)
-app = ApplicationBuilder().token(config.TOKEN).build()
-app.add_handler(CommandHandler("start", start))
+# ✅ SAFE RUN (Render compatible)
+async def main():
+    app = ApplicationBuilder().token(config.TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
 
-print("Bot running...")
-app.run_polling()
+    print("Bot started...")
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling()
+
+    # keep running
+    await asyncio.Event().wait()
+
+if __name__ == "__main__":
+    asyncio.run(main())
