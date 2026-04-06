@@ -3,7 +3,7 @@ import config
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
-ADMIN_ID = 1109352172  # 👉 mee Telegram user ID ikkada pettaali
+ADMIN_ID = 1109352172  # mee Telegram ID
 
 # Load movies
 def load_movies():
@@ -22,9 +22,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for key, movie in movies.items():
         keyboard.append([InlineKeyboardButton(movie["title"], callback_data=key)])
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_text("🎬 Choose a movie:", reply_markup=reply_markup)
+    await update.message.reply_text(
+        "🎬 Choose movie:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 
 # Button click
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -40,13 +41,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             video=movie["file"],
             caption=f"🎬 {movie['title']}"
         )
-    else:
-        await query.message.reply_text("Not found ❌")
 
-# Add movie (admin only)
+# Add movie
 async def add_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
-        await update.message.reply_text("❌ You are not admin")
+        await update.message.reply_text("❌ Not admin")
         return
 
     try:
@@ -55,28 +54,20 @@ async def add_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
         link = context.args[2]
 
         movies = load_movies()
-        movies[movie_id] = {
-            "title": title,
-            "file": link
-        }
-
+        movies[movie_id] = {"title": title, "file": link}
         save_movies(movies)
 
-        await update.message.reply_text(f"✅ Added {title}")
+        await update.message.reply_text("✅ Movie added")
     except:
         await update.message.reply_text("Usage:\n/add id title link")
 
 # List movies
 async def list_movies(update: Update, context: ContextTypes.DEFAULT_TYPE):
     movies = load_movies()
+    text = "\n".join([f"{k} - {v['title']}" for k, v in movies.items()])
+    await update.message.reply_text(text or "No movies")
 
-    text = "🎬 Movies List:\n\n"
-    for key, movie in movies.items():
-        text += f"{key} - {movie['title']}\n"
-
-    await update.message.reply_text(text)
-
-# Run bot
+# RUN BOT (IMPORTANT FIX)
 app = ApplicationBuilder().token(config.TOKEN).build()
 
 app.add_handler(CommandHandler("start", start))
@@ -84,5 +75,5 @@ app.add_handler(CommandHandler("add", add_movie))
 app.add_handler(CommandHandler("list", list_movies))
 app.add_handler(CallbackQueryHandler(button))
 
-print("Bot running with buttons + admin panel 🚀")
+print("Bot running 🚀")
 app.run_polling()
