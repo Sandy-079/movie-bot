@@ -1,11 +1,14 @@
 import json
+import config
+import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-import config
 
+# Load movies
 with open("movies.json") as f:
     movies = json.load(f)
 
+# Check join
 async def is_user_joined(bot, user_id):
     try:
         member = await bot.get_chat_member(config.CHANNEL_USERNAME, user_id)
@@ -13,6 +16,7 @@ async def is_user_joined(bot, user_id):
     except:
         return False
 
+# Start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
@@ -22,6 +26,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if context.args:
         movie_id = context.args[0]
+
         if movie_id in movies:
             await update.message.reply_video(
                 video=movies[movie_id]["file"],
@@ -32,6 +37,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Welcome 👋")
 
-app = ApplicationBuilder().token(config.TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.run_polling()
+# MAIN FIX 👇
+async def main():
+    app = ApplicationBuilder().token(config.TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+
+    print("Bot running...")
+    await app.run_polling()
+
+if __name__ == "__main__":
+    asyncio.run(main())
