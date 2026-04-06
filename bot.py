@@ -1,6 +1,5 @@
 import json
 import config
-import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
@@ -37,13 +36,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Welcome 👋")
 
-# MAIN FIX 👇
-async def main():
-    app = ApplicationBuilder().token(config.TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
+# ✅ FINAL FIX (no asyncio.run)
+app = ApplicationBuilder().token(config.TOKEN).build()
+app.add_handler(CommandHandler("start", start))
 
-    print("Bot running...")
-    await app.run_polling()
-
-if __name__ == "__main__":
-    asyncio.run(main())
+print("Bot running...")
+app.run_polling()
